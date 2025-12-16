@@ -1,3 +1,4 @@
+from __future__ import annotations
 from threading import Thread
 from typing import Any, Callable, Iterable, Self
 
@@ -72,10 +73,13 @@ class ThreadManager:
 
     THREAD_CLASS: type[Thread] = Thread
 
-    def __init__(self) -> None:
-        self._threads = []
+    def __init__(self, /, join_timeout: float | None = None) -> None:
+        self._join_timeout = join_timeout
+        self._threads: list[Thread] = []
 
-    def __call__(self, target: Callable, *args: Any, **kwargs: Any) -> Thread:
+    def __call__(
+        self, target: Callable, /, *args: Any, **kwargs: Any
+    ) -> Thread:
         """Create and return a new Thread.  The first argument is the target
         function.  The rest of the arguments are passed along to the target.
         """
@@ -97,4 +101,4 @@ class ThreadManager:
     def __exit__(self, *args) -> None:
         for thread in self._threads:
             if thread.is_alive():
-                thread.join()
+                thread.join(self._join_timeout)
