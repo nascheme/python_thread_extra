@@ -63,8 +63,8 @@ class ThreadManager:
 
         writers_done = threading.Event()
         with threading.ThreadManager() as tm:
-            readers = threading.ThreadSet(tm(reader) for _ in range(N_READERS))
-            writers = threading.ThreadSet(tm(writer) for _ in range(N_WRITERS))
+            readers = tm.create_set(N_READERS, reader)
+            writers = tm.create_set(N_WRITERS, writer)
             (readers | writers).start()
             writers.join()
             writers_done.set()
@@ -72,6 +72,7 @@ class ThreadManager:
     """
 
     THREAD_CLASS: type[Thread] = Thread
+    SET_CLASS: type[ThreadSet] = ThreadSet
 
     def __init__(self, /, join_timeout: float | None = None) -> None:
         self._join_timeout = join_timeout
@@ -86,6 +87,16 @@ class ThreadManager:
         thread = self.THREAD_CLASS(target=target, args=args, kwargs=kwargs)
         self._threads.append(thread)
         return thread
+
+    def create_set(
+        self, threads: int, target: Callable, /, *args: Any, **kwargs: Any
+    ) -> ThreadSet:
+        """Create a set of new Thread objects.  The first argument is the number of
+        threads to create.
+        """
+        return self.SET_CLASS(
+            self(target, *args, **kwargs) for _ in range(threads)
+        )
 
     def create_thread(self, *args: Any, **kwargs: Any) -> Thread:
         """Create and return a new Thread instance.  Arguments are

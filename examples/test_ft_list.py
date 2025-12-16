@@ -33,8 +33,6 @@ class TestList(TestCase):
 
         with threading.ThreadManager() as tm:
             writer = tm(writer_func, l)
-            readers = threading.ThreadSet(
-                tm(reader_func, l) for _ in range(NTHREAD)
-            )
+            readers = tm.create_set(NTHREAD, reader_func, l)
             writer.start()
             readers.start()
